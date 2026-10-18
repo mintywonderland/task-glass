@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7fbfa">
+<title>Task Glass</title>
+<style>
+:root{color-scheme:light;--ink:#173b3a;--muted:#78908d;--line:rgba(41,105,99,.13);--glass:rgba(255,255,255,.76);--teal:#81d8cc;--teal-dark:#278f84;--bg:#f4f9f8;--shadow:0 12px 36px rgba(28,88,81,.09)}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 100% 0%,#dff7f2 0,transparent 38%),radial-gradient(ellipse at 0% 48%,#e9f7f5 0,transparent 38%),var(--bg);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);min-height:100dvh}
+button,input{font:inherit}button{cursor:pointer;color:inherit}.app{max-width:760px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;justify-content:space-between;margin:2px 2px 25px}.brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:750;letter-spacing:-.04em}.logo{width:35px;height:35px;border-radius:12px;background:linear-gradient(145deg,#a6eee2,#53b9ac);display:grid;place-items:center;box-shadow:0 5px 13px #65cbbd44}.logo svg{width:20px}.date{font-size:12px;color:var(--muted);font-weight:600}
+h1{font-size:clamp(29px,7vw,39px);letter-spacing:-.055em;line-height:1.13;margin:0 0 8px;font-weight:760}.subtitle{font-size:13px;color:var(--muted);margin:0 0 23px}
+.capture{background:var(--glass);border:1px solid rgba(255,255,255,.95);border-radius:25px;padding:15px;box-shadow:var(--shadow);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);transition:transform .2s,box-shadow .2s}.capture:focus-within{box-shadow:0 15px 40px #328f831b,0 0 0 2px #91ddd2aa}
+.capture-row{display:flex;gap:10px;align-items:center}.capture input{min-width:0;flex:1;border:0;outline:0;background:transparent;padding:10px 2px;color:var(--ink);font-size:16px}.capture input::placeholder{color:#9aadaa}.add{border:0;border-radius:15px;width:45px;height:45px;flex-shrink:0;background:linear-gradient(145deg,#a3e9de,#69c9bb);display:grid;place-items:center;box-shadow:0 5px 12px #61bfb044;transition:transform .16s}.add:active{transform:scale(.92)}.add svg{width:21px}
+.hint{font-size:11px;color:#8da29f;padding:6px 3px 0}.section-head{display:flex;align-items:center;justify-content:space-between;margin:29px 2px 12px}.section-head h2{font-size:15px;margin:0;font-weight:750;letter-spacing:-.02em}.count{font-size:11px;color:var(--muted);background:#e4f2ef;border-radius:20px;padding:5px 9px}
+.filters{display:flex;gap:7px;overflow-x:auto;padding:1px 1px 10px;scrollbar-width:none}.filters::-webkit-scrollbar{display:none}.filter{border:1px solid transparent;background:#eaf3f1;color:#718985;border-radius:30px;padding:9px 14px;font-size:12px;white-space:nowrap;transition:all .18s}.filter.active{background:#d0f2ec;color:#1e7068;border-color:#b1e5dc;font-weight:700}
+.tasks{display:grid;gap:10px}.task{position:relative;display:flex;align-items:center;gap:12px;padding:15px 13px;border-radius:21px;background:rgba(255,255,255,.79);border:1px solid rgba(255,255,255,.95);box-shadow:0 5px 18px #2a71680a;touch-action:pan-y;transition:transform .22s,opacity .22s,background .2s;animation:appear .32s both}.task.dragging{transition:none}.task.done{opacity:.7}.task.done .task-text{text-decoration:line-through;color:#8da09d}.check{width:25px;height:25px;border:1.5px solid #c4d9d5;border-radius:9px;background:#fff;display:grid;place-items:center;flex-shrink:0;transition:all .2s}.task.done .check{background:#8bd9cd;border-color:#8bd9cd}.check svg{width:14px;opacity:0;transform:scale(.5);transition:.2s}.task.done .check svg{opacity:1;transform:scale(1)}.task-main{flex:1;min-width:0}.task-text{font-size:14px;line-height:1.45;overflow-wrap:anywhere}.task-meta{display:flex;gap:7px;align-items:center;margin-top:6px;color:#9aadaa;font-size:10px}.status{font-size:10px;padding:4px 8px;border-radius:20px;background:#edf5f3;color:#78908d}.status.progress{background:#fff2dc;color:#a7792e}.status.done{background:#ddf5ee;color:#3c9282}.delete{border:0;background:transparent;color:#a5b7b4;width:30px;height:34px;border-radius:10px;display:grid;place-items:center;opacity:.75}.delete:active{background:#fff0f0;color:#c56e6e}.delete svg{width:16px}.empty{padding:31px 16px;text-align:center;color:#8da29f;font-size:13px;line-height:1.8;background:#ffffff75;border:1px dashed #cfe3df;border-radius:21px}.empty-mark{font-size:24px;margin-bottom:8px}.footer{display:flex;justify-content:space-between;gap:10px;color:#a0b1ae;font-size:10px;padding:22px 4px 0}.text-btn{border:0;background:transparent;color:#7d9c97;font-size:11px;padding:0}.toast{position:fixed;left:50%;bottom:calc(25px + env(safe-area-inset-bottom));transform:translate(-50%,18px);opacity:0;pointer-events:none;background:#204e49;color:white;border-radius:30px;padding:11px 17px;font-size:12px;box-shadow:0 8px 24px #174c4533;transition:all .25s;white-space:nowrap;z-index:10}.toast.show{opacity:1;transform:translate(-50%,0)}.skeleton{height:66px;border-radius:20px;background:linear-gradient(100deg,#edf5f3 20%,#f8fbfa 40%,#edf5f3 60%);background-size:200% 100%;animation:shimmer 1.1s infinite}
+@keyframes shimmer{to{background-position:-200% 0}}@keyframes appear{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}@media(min-width:600px){.app{padding-top:35px}.capture{padding:17px 19px}.task{padding:16px 16px}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main class="app">
+<header class="top"><div class="brand"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#145d55" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg></span>task glass</div><div class="date" id="today"></div></header>
+<h1>頭の中を、<br>すっきりと。</h1><p class="subtitle">思いついたら、すぐに書き留める。</p>
+<form class="capture" id="captureForm"><div class="capture-row"><input id="taskInput" autocomplete="off" maxlength="240" placeholder="今やることをメモ…" aria-label="タスクを入力"><button class="add" type="submit" aria-label="タスクを追加"><svg viewBox="0 0 24 24" fill="none" stroke="#155e56" stroke-width="2.3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div><div class="hint">Enter で追加 · カードを左右にスワイプして状態を変更</div></form>
+<div class="section-head"><h2>あなたのタスク</h2><span class="count" id="count">0 件</span></div>
+<nav class="filters" aria-label="タスクの絞り込み"><button class="filter active" data-filter="all">すべて</button><button class="filter" data-filter="todo">未着手</button><button class="filter" data-filter="progress">進行中</button><button class="filter" data-filter="done">完了</button></nav>
+<section class="tasks" id="tasks" aria-live="polite"><div class="skeleton"></div><div class="skeleton"></div></section>
+<footer class="footer"><span>この端末のブラウザに保存されます</span><button class="text-btn" id="clearDone">完了済みを整理</button></footer>
+</main><div class="toast" id="toast" role="status"></div>
+<script>
+const KEY='task-glass-v1';
+const $=s=>document.querySelector(s);
+const tasksEl=$('#tasks'),input=$('#taskInput'),countEl=$('#count'),toastEl=$('#toast');
+let tasks=[],filter='all',toastTimer;
+const icons={check:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg>',trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6"/></svg>'};
+const statusText={todo:'未着手',progress:'進行中',done:'完了'};
+function load(){try{const data=JSON.parse(localStorage.getItem(KEY)||'[]');tasks=Array.isArray(data)?data.filter(t=>t&&typeof t.text==='string'&&statusText[t.status]):[]}catch{tasks=[]}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(tasks))}catch{showToast('保存できませんでした。ブラウザの設定を確認してください。')}}
+function showToast(msg){toastEl.textContent=msg;toastEl.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.classList.remove('show'),2100)}
+function fmtTime(ts){return new Intl.DateTimeFormat('ja-JP',{hour:'2-digit',minute:'2-digit'}).format(new Date(ts))}
+function render(){
+ const visible=tasks.filter(t=>filter==='all'||t.status===filter);
+ countEl.textContent=tasks.length+' 件';
+ document.querySelectorAll('.filter').forEach(b=>{const on=b.dataset.filter===filter;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on?'true':'false')});
+ if(!visible.length){tasksEl.innerHTML='<div class="empty"><div class="empty-mark">✳</div>'+(tasks.length?'この条件のタスクはありません。':'まだタスクはありません。<br>上の入力欄から、ひとつ書き留めてみましょう。')+'</div>';return}
+ tasksEl.innerHTML='';
+ visible.forEach((t,i)=>{
+  const el=document.createElement('article');el.className='task'+(t.status==='done'?' done':'');el.dataset.id=t.id;el.style.animationDelay=Math.min(i*35,180)+'ms';
+  const check=document.createElement('button');check.className='check';check.setAttribute('aria-label',t.status==='done'?'未着手に戻す':'完了にする');check.innerHTML=icons.check;check.addEventListener('click',()=>cycle(t.id));
+  const main=document.createElement('div');main.className='task-main';
+  const txt=document.createElement('div');txt.className='task-text';txt.textContent=t.text;
+  const meta=document.createElement('div');meta.className='task-meta';const status=document.createElement('span');status.className='status '+t.status;status.textContent=statusText[t.status];const time=document.createElement('span');time.textContent=fmtTime(t.createdAt);meta.append(status,time);main.append(txt,meta);
+  const del=document.createElement('button');del.className='delete';del.setAttribute('aria-label','タスクを削除');del.innerHTML=icons.trash;del.addEventListener('click',()=>remove(t.id));
+  el.append(check,main,del);attachSwipe(el,t.id);tasksEl.append(el);
+ });
+}
+function addTask(text){const clean=text.trim();if(!clean)return;tasks.unshift({id:crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random(),text:clean,status:'todo',createdAt:Date.now()});save();filter='all';render();input.value='';input.focus();showToast('タスクを追加しました')}
+function cycle(id){const t=tasks.find(t=>t.id===id);if(!t)return;t.status=({todo:'progress',progress:'done',done:'todo'})[t.status];save();render();showToast('状態：'+statusText[t.status])}
+function setStatus(id,status){const t=tasks.find(t=>t.id===id);if(!t||t.status===status)return;t.status=status;save();render();showToast('状態：'+statusText[status])}
+function remove(id){tasks=tasks.filter(t=>t.id!==id);save();render();showToast('タスクを削除しました')}
+function attachSwipe(el,id){let startX=0,startY=0,tracking=false;el.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;startX=e.touches[0].clientX;startY=e.touches[0].clientY;tracking=true},{passive:true});el.addEventListener('touchend',e=>{if(!tracking)return;tracking=false;const dx=e.changedTouches[0].clientX-startX,dy=e.changedTouches[0].clientY-startY;if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.25)return;const t=tasks.find(x=>x.id===id);if(!t)return;if(dx<0)setStatus(id,({todo:'progress',progress:'done',done:'todo'})[t.status]);else setStatus(id,({todo:'done',progress:'todo',done:'progress'})[t.status])},{passive:true})}
+$('#captureForm').addEventListener('submit',e=>{e.preventDefault();addTask(input.value)});
+document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;render()}));
+$('#clearDone').addEventListener('click',()=>{const n=tasks.filter(t=>t.status==='done').length;if(!n){showToast('整理する完了タスクはありません');return}tasks=tasks.filter(t=>t.status!=='done');save();render();showToast(n+' 件の完了タスクを整理しました')});
+$('#today').textContent=new Intl.DateTimeFormat('ja-JP',{month:'long',day:'numeric',weekday:'short'}).format(new Date());
+load();setTimeout(render,380);
+</script>
+</body>
+</html>
