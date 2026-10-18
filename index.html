@@ -27,7 +27,7 @@ h1{font-size:clamp(29px,7vw,39px);letter-spacing:-.055em;line-height:1.13;margin
 <div class="section-head"><h2>あなたのタスク</h2><span class="count" id="count">0 件</span></div>
 <nav class="filters" aria-label="タスクの絞り込み"><button class="filter active" data-filter="all">すべて</button><button class="filter" data-filter="todo">未着手</button><button class="filter" data-filter="progress">進行中</button><button class="filter" data-filter="done">完了</button></nav>
 <section class="tasks" id="tasks" aria-live="polite"><div class="skeleton"></div><div class="skeleton"></div></section>
-<footer class="footer"><span>この端末のブラウザに保存されます</span><div style="display:flex;gap:12px;align-items:center"><button class="text-btn" id="exportTasks">バックアップ</button><button class="text-btn" id="clearDone">完了済みを整理</button></div></footer>
+<footer class="footer"><span>この端末のブラウザに保存されます</span><div style="display:flex;gap:12px;align-items:center"><button class="text-btn" id="exportTasks">バックアップ</button><button class="text-btn" id="importTasks">復元</button><input id="importFile" type="file" accept="application/json,.json" hidden aria-label="バックアップファイルを選択"><button class="text-btn" id="clearDone">完了済みを整理</button></div></footer>
 </main><div class="toast" id="toast" role="status"></div>
 <script>
 const KEY='task-glass-v1';
@@ -64,6 +64,23 @@ function attachSwipe(el,id){let startX=0,startY=0,tracking=false;el.addEventList
 $('#captureForm').addEventListener('submit',e=>{e.preventDefault();addTask(input.value)});
 document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;render()}));
 $('#exportTasks').addEventListener('click',()=>{try{const payload={app:'Task Glass',version:1,exportedAt:new Date().toISOString(),tasks};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='task-glass-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('バックアップを書き出しました')}catch{showToast('バックアップを書き出せませんでした')}});
+$('#importTasks').addEventListener('click',()=>$('#importFile').click());
+$('#importFile').addEventListener('change',async e=>{
+ const file=e.target.files&&e.target.files[0];e.target.value='';if(!file)return;
+ if(file.size>1024*1024){showToast('ファイルが大きすぎます（上限 1 MB）');return}
+ try{
+  const payload=JSON.parse(await file.text());
+  if(!payload||payload.app!=='Task Glass'||payload.version!==1||!Array.isArray(payload.tasks)||payload.tasks.length>1000)throw new Error('format');
+  const ids=new Set();
+  const restored=payload.tasks.map(t=>{
+   if(!t||typeof t.id!=='string'||!t.id||ids.has(t.id)||typeof t.text!=='string'||!t.text.trim()||t.text.length>240||!statusText[t.status]||!Number.isFinite(t.createdAt)||t.createdAt<=0||t.createdAt>Date.now()+86400000)throw new Error('task');
+   ids.add(t.id);return {id:t.id,text:t.text,status:t.status,createdAt:t.createdAt};
+  });
+  if(!window.confirm('現在のタスク '+tasks.length+' 件を、バックアップ内の '+restored.length+' 件で置き換えます。現在のデータは上書きされます。続けますか？'))return;
+  try{localStorage.setItem(KEY,JSON.stringify(restored))}catch{showToast('保存できませんでした。現在のタスクは変更していません');return}
+  tasks=restored;filter='all';render();showToast('バックアップを復元しました');
+ }catch{showToast('バックアップを読み込めません。正しい Task Glass の JSON を選んでください')}
+});
 $('#clearDone').addEventListener('click',()=>{const n=tasks.filter(t=>t.status==='done').length;if(!n){showToast('整理する完了タスクはありません');return}if(!window.confirm('完了済みのタスク '+n+' 件を削除します。この操作は取り消せません。続けますか？'))return;tasks=tasks.filter(t=>t.status!=='done');save();render();showToast(n+' 件の完了タスクを整理しました')});
 $('#today').textContent=new Intl.DateTimeFormat('ja-JP',{month:'long',day:'numeric',weekday:'short'}).format(new Date());
 load();setTimeout(render,380);
