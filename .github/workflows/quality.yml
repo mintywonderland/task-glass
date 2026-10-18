@@ -52,6 +52,9 @@ jobs:
             ['Task input has accessible label', /aria-label="タスクを入力"/.test(html)],
             ['Task text is inserted as text, not HTML', /txt\.textContent\s*=\s*t\.text/.test(html)],
             ['Task input length is bounded', /maxlength="240"/i.test(html)],
+            ['Local JSON backup export is available', /id="exportTasks"/.test(html) && /JSON\.stringify\(payload,null,2\)/.test(html)],
+            ['Storage read failures are surfaced', /保存データを読み取れません/.test(html)],
+            ['No dynamic code execution', !/\beval\s*\(|\bnew\s+Function\s*\(/.test(html)],
             ['Reduced motion preference', /prefers-reduced-motion:\s*reduce/.test(html)],
             ['No remote script dependency', !/<script[^>]+src=/i.test(html)],
             ['No hard-coded secret-like variable names', !/(?:api[_-]?key|client[_-]?secret|access[_-]?token)\s*[:=]\s*["'][^"']{8,}/i.test(html)]
