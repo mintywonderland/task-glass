@@ -27,7 +27,7 @@ h1{font-size:clamp(29px,7vw,39px);letter-spacing:-.055em;line-height:1.13;margin
 <div class="section-head"><h2>あなたのタスク</h2><span class="count" id="count">0 件</span></div>
 <nav class="filters" aria-label="タスクの絞り込み"><button class="filter active" data-filter="all">すべて</button><button class="filter" data-filter="todo">未着手</button><button class="filter" data-filter="progress">進行中</button><button class="filter" data-filter="done">完了</button></nav>
 <section class="tasks" id="tasks" aria-live="polite"><div class="skeleton"></div><div class="skeleton"></div></section>
-<footer class="footer"><span>この端末のブラウザに保存されます</span><button class="text-btn" id="clearDone">完了済みを整理</button></footer>
+<footer class="footer"><span>この端末のブラウザに保存されます</span><div style="display:flex;gap:12px;align-items:center"><button class="text-btn" id="exportTasks">バックアップ</button><button class="text-btn" id="clearDone">完了済みを整理</button></div></footer>
 </main><div class="toast" id="toast" role="status"></div>
 <script>
 const KEY='task-glass-v1';
@@ -36,7 +36,7 @@ const tasksEl=$('#tasks'),input=$('#taskInput'),countEl=$('#count'),toastEl=$('#
 let tasks=[],filter='all',toastTimer;
 const icons={check:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg>',trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6"/></svg>'};
 const statusText={todo:'未着手',progress:'進行中',done:'完了'};
-function load(){try{const data=JSON.parse(localStorage.getItem(KEY)||'[]');tasks=Array.isArray(data)?data.filter(t=>t&&typeof t.id==='string'&&typeof t.text==='string'&&t.text.trim().length>0&&t.text.length<=240&&statusText[t.status]&&Number.isFinite(t.createdAt)&&t.createdAt>0).map(t=>({id:t.id,text:t.text,status:t.status,createdAt:t.createdAt})):[]}catch{tasks=[]}}
+function load(){try{const raw=localStorage.getItem(KEY);const data=JSON.parse(raw||'[]');if(!Array.isArray(data)){tasks=[];showToast('保存データを読み取れません。バックアップがあれば保管してください。');return}tasks=data.filter(t=>t&&typeof t.id==='string'&&typeof t.text==='string'&&t.text.trim().length>0&&t.text.length<=240&&statusText[t.status]&&Number.isFinite(t.createdAt)&&t.createdAt>0).map(t=>({id:t.id,text:t.text,status:t.status,createdAt:t.createdAt}));if(raw&&data.length!==tasks.length)showToast('一部の不正な保存データを読み飛ばしました')}catch{tasks=[];showToast('保存データを読み取れません。ブラウザの設定を確認してください。')}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(tasks))}catch{showToast('保存できませんでした。ブラウザの設定を確認してください。')}}
 function showToast(msg){toastEl.textContent=msg;toastEl.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.classList.remove('show'),2100)}
 function fmtTime(ts){return new Intl.DateTimeFormat('ja-JP',{hour:'2-digit',minute:'2-digit'}).format(new Date(ts))}
@@ -63,6 +63,7 @@ function remove(id){tasks=tasks.filter(t=>t.id!==id);save();render();showToast('
 function attachSwipe(el,id){let startX=0,startY=0,tracking=false;el.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;startX=e.touches[0].clientX;startY=e.touches[0].clientY;tracking=true},{passive:true});el.addEventListener('touchend',e=>{if(!tracking)return;tracking=false;const dx=e.changedTouches[0].clientX-startX,dy=e.changedTouches[0].clientY-startY;if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.25)return;const t=tasks.find(x=>x.id===id);if(!t)return;if(dx<0)setStatus(id,({todo:'progress',progress:'done',done:'todo'})[t.status]);else setStatus(id,({todo:'done',progress:'todo',done:'progress'})[t.status])},{passive:true})}
 $('#captureForm').addEventListener('submit',e=>{e.preventDefault();addTask(input.value)});
 document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;render()}));
+$('#exportTasks').addEventListener('click',()=>{try{const payload={app:'Task Glass',version:1,exportedAt:new Date().toISOString(),tasks};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='task-glass-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('バックアップを書き出しました')}catch{showToast('バックアップを書き出せませんでした')}});
 $('#clearDone').addEventListener('click',()=>{const n=tasks.filter(t=>t.status==='done').length;if(!n){showToast('整理する完了タスクはありません');return}if(!window.confirm('完了済みのタスク '+n+' 件を削除します。この操作は取り消せません。続けますか？'))return;tasks=tasks.filter(t=>t.status!=='done');save();render();showToast(n+' 件の完了タスクを整理しました')});
 $('#today').textContent=new Intl.DateTimeFormat('ja-JP',{month:'long',day:'numeric',weekday:'short'}).format(new Date());
 load();setTimeout(render,380);
