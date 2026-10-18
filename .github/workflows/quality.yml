@@ -1,0 +1,65 @@
+name: Quality checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check inline JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const vm = require('node:vm');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const scripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)];
+          if (scripts.length !== 1) {
+            console.error(`Expected one inline script, found ${scripts.length}`);
+            process.exit(1);
+          }
+          new vm.Script(scripts[0][1], { filename: 'index.html:inline-script' });
+          console.log('Inline JavaScript syntax: OK');
+          NODE
+
+      - name: Check required UI and security invariants
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const checks = [
+            ['Japanese document language', /<html lang="ja">/.test(html)],
+            ['Responsive viewport', /name="viewport"/.test(html)],
+            ['Task input has accessible label', /aria-label="タスクを入力"/.test(html)],
+            ['Task text is inserted as text, not HTML', /txt\.textContent\s*=\s*t\.text/.test(html)],
+            ['Task input length is bounded', /maxlength="240"/i.test(html)],
+            ['Reduced motion preference', /prefers-reduced-motion:\s*reduce/.test(html)],
+            ['No remote script dependency', !/<script[^>]+src=/i.test(html)],
+            ['No hard-coded secret-like variable names', !/(?:api[_-]?key|client[_-]?secret|access[_-]?token)\s*[:=]\s*["'][^"']{8,}/i.test(html)]
+          ];
+          let failed = false;
+          for (const [label, passed] of checks) {
+            console.log(`${passed ? 'PASS' : 'FAIL'}: ${label}`);
+            if (!passed) failed = true;
+          }
+          if (failed) process.exit(1);
+          NODE
