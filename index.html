@@ -36,7 +36,7 @@ const tasksEl=$('#tasks'),input=$('#taskInput'),countEl=$('#count'),toastEl=$('#
 let tasks=[],filter='all',toastTimer;
 const icons={check:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg>',trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6"/></svg>'};
 const statusText={todo:'未着手',progress:'進行中',done:'完了'};
-function load(){try{const data=JSON.parse(localStorage.getItem(KEY)||'[]');tasks=Array.isArray(data)?data.filter(t=>t&&typeof t.text==='string'&&statusText[t.status]):[]}catch{tasks=[]}}
+function load(){try{const data=JSON.parse(localStorage.getItem(KEY)||'[]');tasks=Array.isArray(data)?data.filter(t=>t&&typeof t.id==='string'&&typeof t.text==='string'&&t.text.trim().length>0&&t.text.length<=240&&statusText[t.status]&&Number.isFinite(t.createdAt)&&t.createdAt>0).map(t=>({id:t.id,text:t.text,status:t.status,createdAt:t.createdAt})):[]}catch{tasks=[]}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(tasks))}catch{showToast('保存できませんでした。ブラウザの設定を確認してください。')}}
 function showToast(msg){toastEl.textContent=msg;toastEl.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.classList.remove('show'),2100)}
 function fmtTime(ts){return new Intl.DateTimeFormat('ja-JP',{hour:'2-digit',minute:'2-digit'}).format(new Date(ts))}
@@ -63,7 +63,7 @@ function remove(id){tasks=tasks.filter(t=>t.id!==id);save();render();showToast('
 function attachSwipe(el,id){let startX=0,startY=0,tracking=false;el.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;startX=e.touches[0].clientX;startY=e.touches[0].clientY;tracking=true},{passive:true});el.addEventListener('touchend',e=>{if(!tracking)return;tracking=false;const dx=e.changedTouches[0].clientX-startX,dy=e.changedTouches[0].clientY-startY;if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.25)return;const t=tasks.find(x=>x.id===id);if(!t)return;if(dx<0)setStatus(id,({todo:'progress',progress:'done',done:'todo'})[t.status]);else setStatus(id,({todo:'done',progress:'todo',done:'progress'})[t.status])},{passive:true})}
 $('#captureForm').addEventListener('submit',e=>{e.preventDefault();addTask(input.value)});
 document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;render()}));
-$('#clearDone').addEventListener('click',()=>{const n=tasks.filter(t=>t.status==='done').length;if(!n){showToast('整理する完了タスクはありません');return}tasks=tasks.filter(t=>t.status!=='done');save();render();showToast(n+' 件の完了タスクを整理しました')});
+$('#clearDone').addEventListener('click',()=>{const n=tasks.filter(t=>t.status==='done').length;if(!n){showToast('整理する完了タスクはありません');return}if(!window.confirm('完了済みのタスク '+n+' 件を削除します。この操作は取り消せません。続けますか？'))return;tasks=tasks.filter(t=>t.status!=='done');save();render();showToast(n+' 件の完了タスクを整理しました')});
 $('#today').textContent=new Intl.DateTimeFormat('ja-JP',{month:'long',day:'numeric',weekday:'short'}).format(new Date());
 load();setTimeout(render,380);
 </script>
